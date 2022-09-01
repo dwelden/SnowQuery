@@ -7,7 +7,7 @@ import os.path
 
 def build_window():
     # Window theme settings
-    sg.theme('DarkGray11')
+    sg.theme('DarkGray15')
     UI_font = ("Segoe UI", 12)
     fixed_font = ('Consolas', 12)
 
@@ -89,7 +89,7 @@ def main():
                 if qry_error:
                     window['-output-'].print(
                         output,
-                        colors=('red','black'))
+                        colors=('red'))
                 else:
                     window['-output-'].print(output)
 
