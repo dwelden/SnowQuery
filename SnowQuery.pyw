@@ -5,16 +5,16 @@ import PySimpleGUI as sg
 from sys import argv
 import os.path
 
-sg.theme('DarkGray11')
-UI_font = ("Segoe UI", 12)
-fixed_font = ('Consolas', 12)
-error_font = ('Consolas', 12, 'bold')
-
 def build_window():
+    # Window theme settings
+    sg.theme('DarkGray11')
+    UI_font = ("Segoe UI", 12)
+    fixed_font = ('Consolas', 12)
+
     # Create the Window
     layout = [  [   sg.Text('Enter SQL command'),
                     sg.Push(),
-                    sg.Button('▶',tooltip='Run (F5 or Ctrl-Enter)')],
+                    sg.Button('▶',tooltip='Run (F5)')],
                 [sg.Multiline(
                     size=(80,15),
                     key='-query-',
@@ -39,7 +39,6 @@ def build_window():
         resizable=True,
         finalize=True)
     window.bind('<F5>', '▶')
-    window.bind('<Control-Return>', '▶')
     window.bind('<Control-q>', 'Quit')
 
     return window
@@ -90,7 +89,6 @@ def main():
                 if qry_error:
                     window['-output-'].print(
                         output,
-                        font=error_font,
                         colors=('red','black'))
                 else:
                     window['-output-'].print(output)
