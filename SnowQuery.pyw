@@ -48,16 +48,23 @@ def show_window(cursor):
             break
         
         query = values["-query-"]
-        qry_error, output = run_query(cursor, query)
-        if qry_error:
-            window['-output-'].print(
-                output,
-                colors=('red'))
+        if query:
+            qry_error, output = run_query(cursor, query)
+            if qry_error:
+                window['-output-'].print(
+                    output,
+                    colors=('red'))
+            else:
+                window['-output-'].print(output)
         else:
-            window['-output-'].print(output)
+            sg.popup(
+                'Enter a SQL command\nPress ▶ or F5 to submit\nPress Control-Q to quit',
+                font=UI_font,
+                text_color=sg.theme_input_text_color(),
+                title='')
 
     window.close()
-
+    
     return
 
 def get_icon():
