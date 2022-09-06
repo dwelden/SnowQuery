@@ -60,7 +60,6 @@ def show_window(cursor):
             sg.popup(
                 'Enter a SQL command\nPress ▶ or F5 to submit\nPress Control-Q to quit',
                 font=UI_font,
-                text_color=sg.theme_input_text_color(),
                 title='')
 
     window.close()
