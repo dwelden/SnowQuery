@@ -11,7 +11,7 @@ def show_window(cursor):
     UI_font = ("Segoe UI", 12)
     fixed_font = ('Consolas', 12)
 
-    # Create the Window
+    # Create the Window layout
     layout = [  [   sg.Text('Enter SQL command'),
                     sg.Push(),
                     sg.Button('▶',tooltip='Run (F5)')],
@@ -30,6 +30,7 @@ def show_window(cursor):
                     expand_y=True,
                     do_not_clear=False)]]
 
+    # Create the Window
     icon = get_icon()
     window = sg.Window(
         title='Snow Query',
@@ -48,22 +49,33 @@ def show_window(cursor):
             break
         
         query = values["-query-"]
+        
         if query:
+            # Execute query and return output
             qry_error, output = run_query(cursor, query)
             if qry_error:
+                # Display error output
                 window['-output-'].print(
                     output,
                     colors=('red'))
             else:
+                # Display query output
                 window['-output-'].print(output)
         else:
+            # Display help popup in approximate center of window
+            win_loc = window.current_location()
+            win_size = window.size
+            pop_loc = (
+                win_loc[0] + int(win_size[0]/2),
+                win_loc[1] + int(win_size[1]/2))
             sg.popup(
                 'Enter a SQL command\nPress ▶ or F5 to submit\nPress Control-Q to quit',
                 font=UI_font,
-                title='')
+                title='',
+                location=pop_loc)
 
     window.close()
-    
+
     return
 
 def get_icon():
