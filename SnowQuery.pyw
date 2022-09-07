@@ -69,7 +69,9 @@ def show_window(cursor):
                 win_loc[0] + int(win_size[0]/2),
                 win_loc[1] + int(win_size[1]/2))
             sg.popup(
-                'Enter a SQL command\nPress ▶ or F5 to submit\nPress Control-Q to quit',
+                'Enter a SQL command',
+                'Press ▶ or F5 to submit',
+                'Press Control-Q to quit',
                 font=UI_font,
                 title='',
                 location=pop_loc)
