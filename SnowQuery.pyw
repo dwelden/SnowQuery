@@ -1,3 +1,4 @@
+import threading
 import snowflake.connector
 from snowflake.connector import DictCursor
 import prettytable as pt
@@ -13,8 +14,8 @@ def show_window(cursor, dcursor):
     fixed_font = ('Consolas', 12)
     run = '▶'
 
-    tree_data = build_database_tree(dcursor)
-
+    tree_data = sg.TreeData()
+    
     # Create the Window layout
     left_column = sg.Frame('Databases',
         [   [sg.Tree(data=tree_data,
@@ -22,6 +23,7 @@ def show_window(cursor, dcursor):
                     auto_size_columns=True,
                     select_mode=sg.TABLE_SELECT_MODE_EXTENDED,
                     col0_width=30,
+                    vertical_scroll_only=False,
                     key='-TREE-',
                     show_expanded=False,
                     enable_events=True,
@@ -50,7 +52,10 @@ def show_window(cursor, dcursor):
                 do_not_clear=False)]],
         expand_x=True,
         expand_y=True)
-    layout = [[left_column, right_column]]
+    layout = [
+        [   [left_column,
+            right_column],
+        [sg.StatusBar('Loading databases...',key='-STATUSBAR-')]]]
 
     # Create the Window
     icon = get_icon()
@@ -63,6 +68,13 @@ def show_window(cursor, dcursor):
         finalize=True)
     window.bind('<F5>', run)
     window.bind('<Control-q>', 'Quit')
+
+    # Start thread to build database tree
+    threading.Thread(
+        target=build_database_tree,
+        args=(window,dcursor,),
+        daemon=True
+    ).start()
 
     # Event Loop to process "events"
     while True:             
@@ -100,10 +112,11 @@ def show_window(cursor, dcursor):
                     location=popup_location)
 
     window.close()
+    del window
 
     return
 
-def build_database_tree(dcursor):
+def build_database_tree(window, dcursor):
     tree_data = sg.TreeData()
     object_types = [
         'Tables',
@@ -146,8 +159,10 @@ def build_database_tree(dcursor):
                     # Add schema object to tree
                     schema_object_key = f'-{db}.{schema}.{schema_object}-'
                     tree_data.Insert(object_type_key,schema_object_key,schema_object,[])
+
+        window['-TREE-'].update(values=tree_data)
                     
-    return(tree_data)
+    window['-STATUSBAR-'].update(value='Ready')
 
 def get_metadata(dcursor, sql):
     dcursor.execute(sql)
