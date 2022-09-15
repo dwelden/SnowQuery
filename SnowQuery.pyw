@@ -135,6 +135,7 @@ def show_window(cursor, dcursor):
 def new_file(window, new_query):
     query_file = None
     window['-QUERYNAME-'].update(new_query)
+    window['-QUERYNAME-'].set_tooltip(new_query)
     window['-QUERY-'].update('')
     window['-OUTPUT-'].update('')
     return query_file
@@ -147,7 +148,8 @@ def open_file(window):
     if query_file:
         with open(query_file,'r') as f:
             text = f.read()
-            window['-QUERYNAME-'].update(query_file)
+            window['-QUERYNAME-'].update(os.path.basename(query_file))
+            window['-QUERYNAME-'].set_tooltip(query_file)
             window['-QUERY-'].update(text)
             window['-OUTPUT-'].update('')
     return query_file
@@ -170,7 +172,8 @@ def save_file_as(window):
         text = window['-QUERY-'].get()
         with open(query_file,'w') as f:
             f.write(text)
-            window['-QUERYNAME-'].update(query_file)
+            window['-QUERYNAME-'].update(os.path.basename(query_file))
+            window['-QUERYNAME-'].set_tooltip(query_file)
     return query_file
 
 def show_help(window, run_event):
