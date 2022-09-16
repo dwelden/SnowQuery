@@ -77,7 +77,7 @@ def show_window(cursor, dcursor):
         expand_x=True,
         expand_y=True)
     layout = [
-        [sg.Menu(menu_def, tearoff=False, pad=(200, 1))],
+        [sg.Menu(menu_def)],
         [left_column, right_column],
         [sg.StatusBar('Loading databases...',key='-STATUSBAR-')]]
 
