@@ -11,8 +11,8 @@ from snowflake.connector import DictCursor
 def show_window(cursor, dcursor):
     # Window theme settings
     sg.theme('DarkGray15')
-    UI_font = ("Segoe UI", 12)
-    fixed_font = ('Consolas', 12)
+    UI_font = ("Segoe UI", 11)
+    fixed_font = ('Consolas', 11)
 
     # Event labels
     run_event     = '▶'      #F5
