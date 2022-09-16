@@ -56,10 +56,9 @@ def show_window(cursor, dcursor):
         expand_x=True,
         expand_y=True)
     right_column = sg.Column(
-        [  [sg.Text('Enter SQL command'),
+        [  [sg.Text(new_query,key='-QUERYNAME-'),
             sg.Push(),
             sg.Button(run_event,tooltip='Run (F5)')],
-           [sg.Text(new_query,key='-QUERYNAME-')],
            [sg.Multiline(
                 size=(80,15),
                 key='-QUERY-',
