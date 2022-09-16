@@ -257,7 +257,7 @@ def build_database_tree(window, dcursor):
 
     # Get databases
     sql = 'SHOW DATABASES;'
-    dbs = get_metadata(dcursor, sql)
+    dbs = get_metadata(dcursor, sql, fully_qualified=False)
     for db in dbs:
         # Add database to tree
         db_key = f'-{db}-'
@@ -265,7 +265,7 @@ def build_database_tree(window, dcursor):
 
         # Get database schemas
         sql = f'SHOW SCHEMAS IN DATABASE {db};'
-        schemas = get_metadata(dcursor, sql)
+        schemas = get_metadata(dcursor, sql, fully_qualified=False)
         for schema in schemas:
             # Add schema to tree
             schema_key = f'-{db}.{schema}-'
@@ -277,25 +277,47 @@ def build_database_tree(window, dcursor):
                 object_type_key = f'-{db}.{schema}-{object_type}-'
                 tree_data.Insert(schema_key,object_type_key,object_type,[])
 
-                # Get schema objects
-                sql = f'SHOW {object_type} IN SCHEMA {db}.{schema};'
-                schema_objects = get_metadata(dcursor, sql)
-                for schema_object in schema_objects:
-                    # Add schema object to tree
-                    schema_object_key = f'-{db}.{schema}.{schema_object}-'
-                    tree_data.Insert(object_type_key,schema_object_key,schema_object,[])
+    # Get schema objects
+    for object_type in object_types:
+        sql = f'SHOW {object_type} IN ACCOUNT;'
+        schema_objects = get_metadata(dcursor, sql, fully_qualified=True)
+        for db, schema, name in schema_objects:
+            # Add schema object to tree
+            object_type_key = f'-{db}.{schema}-{object_type}-'
+            schema_object_key = f'-{db}.{schema}.{name}-'
+            tree_data.Insert(object_type_key,schema_object_key,name,[])
 
         window['-TREE-'].update(values=tree_data)
                     
     window['-STATUSBAR-'].update(value='Ready')
 
-def get_metadata(dcursor, sql):
+def get_metadata(dcursor, sql, fully_qualified):
     dcursor.execute(sql)
-    sql2 = 'SELECT "name" FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))'
+
     if 'FUNCTIONS' in sql.upper() or 'PROCEDURES' in sql.upper():
-        sql2 += """ WHERE "is_builtin" = 'N'"""
-    dcursor.execute(sql2)
-    metadata = [row['name'] for row in dcursor]
+        dbname = 'catalog_name'
+        filter = """ WHERE "is_builtin" = 'N'"""
+    else:
+        dbname = 'database_name'
+        filter = None
+
+    if fully_qualified:
+        results_sql = f'SELECT "{dbname}", "schema_name", "name"'
+    else:
+        results_sql = 'SELECT "name"'
+    results_sql += 'FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))'
+    if filter:
+        results_sql += """ WHERE "is_builtin" = 'N'"""
+    
+    dcursor.execute(results_sql)
+    if fully_qualified:
+        metadata = [
+                [row[dbname],
+                row['schema_name'],
+                row['name']]
+            for row in dcursor]
+    else:
+        metadata = [row['name'] for row in dcursor]
     return metadata
 
 def get_icon():
