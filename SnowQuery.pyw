@@ -40,6 +40,16 @@ def show_window(cursor, dcursor):
         ['&Help',
             ['&' + help_event,
              '&' + about_event]]]
+    query_right_click_menu = ['',
+        ['Cut::Cut~-QUERY-',
+         'Copy::Copy~-QUERY-',
+         'Paste::Paste~-QUERY-',
+         'Delete::Delete~-QUERY-',
+         '---',
+         'Select All::Select All~-QUERY-']]
+    output_right_click_menu = ['',
+        ['Copy::Copy~-OUTPUT-',
+         'Select All::Select All~-OUTPUT-']]
     tree_data = sg.TreeData()
     left_column = sg.Frame('Databases',
         [   [sg.Tree(data=tree_data,
@@ -62,6 +72,7 @@ def show_window(cursor, dcursor):
            [sg.Multiline(
                 size=(80,15),
                 key='-QUERY-',
+                right_click_menu=query_right_click_menu,
                 font=fixed_font,
                 expand_x=True,
                 expand_y=True)],
@@ -70,6 +81,7 @@ def show_window(cursor, dcursor):
                 disabled=True,
                 size=(80,15),
                 key='-OUTPUT-',
+                right_click_menu=output_right_click_menu,
                 font=fixed_font,
                 expand_x=True,
                 expand_y=True)]],
@@ -89,6 +101,8 @@ def show_window(cursor, dcursor):
         font=UI_font,
         resizable=True,
         finalize=True)
+    tree = window['-TREE-']
+    tree.Widget.configure(show='tree')
     window.bind('<F5>', run_event)
     window.bind('<Control-n>', new_event)
     window.bind('<Control-o>', open_event)
@@ -125,11 +139,44 @@ def show_window(cursor, dcursor):
         elif event == run_event:
             query = values["-QUERY-"]
             run(window, query, cursor, run_event)
+        elif (event in query_right_click_menu[1]
+          or event in output_right_click_menu[1]):
+            event, element = event.split('~')
+            event = event.split(':',maxsplit=1)[0]
+            element:sg.Multiline = window[element]
+            do_clipboard_operation(event, window, element)
 
     window.close()
     del window
 
     return
+
+def do_clipboard_operation(event, window, element):
+    if event == 'Select All':
+        element.Widget.selection_clear()
+        element.Widget.tag_add('sel', '1.0', 'end')
+    elif event == 'Copy':
+        try:
+            text = element.Widget.selection_get()
+            window.TKroot.clipboard_clear()
+            window.TKroot.clipboard_append(text)
+        except:
+            print('Nothing selected')
+    elif event == 'Paste':
+        element.Widget.insert(sg.tk.INSERT, window.TKroot.clipboard_get())
+    elif event == 'Cut':
+        try:
+            text = element.Widget.selection_get()
+            window.TKroot.clipboard_clear()
+            window.TKroot.clipboard_append(text)
+            element.Widget.delete("sel.first", "sel.last")
+        except:
+            print('Nothing selected')
+    elif event == 'Delete':
+        try:
+            element.Widget.delete("sel.first", "sel.last")
+        except:
+            print('Nothing selected')
 
 def new_file(window, new_query):
     query_file = None
