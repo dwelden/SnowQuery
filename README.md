@@ -6,4 +6,4 @@ Simple Snowflake query application created with: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;❖&nbsp;&nbsp;PrettyTable https://github.com/jazzband/prettytable <br>
 <br>
 
-![image](https://user-images.githubusercontent.com/11447810/190705717-f3d06d3d-15f9-4639-9481-c3a33f4fb433.png)
+![image](https://user-images.githubusercontent.com/11447810/191049877-b7f2d31b-3dd3-4841-add8-c8b7dfb08126.png)
