@@ -381,9 +381,9 @@ def get_metadata(dcursor, sql, object_type):
         filter = None
 
     if object_type == 'Databases':
-        results_sql = f'SELECT "name"'
+        results_sql = 'SELECT "name"'
     elif object_type == 'Schemas':
-        results_sql = f'SELECT "{dbname}", "name"'
+        results_sql = 'SELECT "database_name", "name"'
     else:
         results_sql = f'SELECT "{dbname}", "schema_name", "name"'
     results_sql += ' FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))'
