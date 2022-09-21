@@ -331,31 +331,35 @@ def build_database_tree(window, dcursor):
         'Procedures']
 
     # Get databases
-    sql = 'SHOW DATABASES;'
-    dbs = get_metadata(dcursor, sql, fully_qualified=False)
+    sql = 'SHOW DATABASES IN ACCOUNT;'
+    dbs = get_metadata(dcursor, sql, 'Databases')
     for db in dbs:
         # Add database to tree
         db_key = f'{db}'
         tree_data.Insert('',db_key,db,[])
 
-        # Get database schemas
-        sql = f'SHOW SCHEMAS IN DATABASE {db};'
-        schemas = get_metadata(dcursor, sql, fully_qualified=False)
-        for schema in schemas:
-            # Add schema to tree
-            schema_key = f'{db}.{schema}'
-            tree_data.Insert(db_key,schema_key,schema,[])
+    # Get database schemas
+    sql = 'SHOW SCHEMAS IN ACCOUNT;'
+    schemas = get_metadata(dcursor, sql, 'Schemas')
+    for db, schema in schemas:
+        # Add schema to tree
+        db_key = f'{db}'
+        schema_key = f'{db}.{schema}'
+        tree_data.Insert(db_key,schema_key,schema,[])
 
-            # Get schema object types
-            for object_type in object_types:
-                # Add schema object type to tree
-                object_type_key = f'{db}.{schema}-{object_type}'
-                tree_data.Insert(schema_key,object_type_key,object_type,[])
+        # Get schema object types
+        for object_type in object_types:
+            # INFORMATION_SCHEMA has only Views
+            if schema == 'INFORMATION_SCHEMA' and object_type != 'Views':
+                continue
+            # Add schema object type to tree
+            object_type_key = f'{db}.{schema}-{object_type}'
+            tree_data.Insert(schema_key,object_type_key,object_type,[])
 
     # Get schema objects
     for object_type in object_types:
         sql = f'SHOW {object_type} IN ACCOUNT;'
-        schema_objects = get_metadata(dcursor, sql, fully_qualified=True)
+        schema_objects = get_metadata(dcursor, sql, object_type)
         for db, schema, name in schema_objects:
             # Add schema object to tree
             object_type_key = f'{db}.{schema}-{object_type}'
@@ -365,34 +369,42 @@ def build_database_tree(window, dcursor):
     window['-TREE-'].update(values=tree_data)
     window['-STATUSBAR-'].update(value='Ready')
 
-def get_metadata(dcursor, sql, fully_qualified):
+def get_metadata(dcursor, sql, object_type):
     ''' Get requested database metadata from Snowflake '''
     dcursor.execute(sql)
 
-    if 'FUNCTIONS' in sql.upper() or 'PROCEDURES' in sql.upper():
+    if object_type in ('Functions', 'Procedures'):
         dbname = 'catalog_name'
         filter = """ WHERE "is_builtin" = 'N'"""
     else:
         dbname = 'database_name'
         filter = None
 
-    if fully_qualified:
-        results_sql = f'SELECT "{dbname}", "schema_name", "name"'
+    if object_type == 'Databases':
+        results_sql = f'SELECT "name"'
+    elif object_type == 'Schemas':
+        results_sql = f'SELECT "{dbname}", "name"'
     else:
-        results_sql = 'SELECT "name"'
+        results_sql = f'SELECT "{dbname}", "schema_name", "name"'
     results_sql += ' FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))'
     if filter:
         results_sql += """ WHERE "is_builtin" = 'N'"""
     
     dcursor.execute(results_sql)
-    if fully_qualified:
+    if object_type == 'Databases':
+        metadata = [row['name'] for row in dcursor]
+    elif object_type == 'Schemas':
+        metadata = [
+                [row[dbname],
+                row['name']]
+            for row in dcursor]
+    else:
         metadata = [
                 [row[dbname],
                 row['schema_name'],
                 row['name']]
             for row in dcursor]
-    else:
-        metadata = [row['name'] for row in dcursor]
+
     return metadata
 
 def get_icon():
