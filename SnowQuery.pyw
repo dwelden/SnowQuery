@@ -149,8 +149,7 @@ def show_window(cursor, dcursor):
         elif (event in query_context_menu[1]
           or event in output_context_menu[1]):
             do_clipboard_operation(event, window)
-        elif event in ('Copy::Copy~-TREE-',
-                       'Paste name in query::Paste~-TREE-'):
+        elif event in tree_context_menu[1]:
             do_tree_operation(event, window, values['-TREE-'])
 
     window.close()
