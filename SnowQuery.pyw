@@ -311,7 +311,7 @@ def submit_query(cursor, query):
                 output.align[column.name] = "r"
     except Exception as e:
         query_error = True
-        output = e.msg
+        output = e.__repr__()
     return((query_error,output))
 
 def build_database_tree(window, dcursor):
@@ -387,7 +387,7 @@ def get_metadata(dcursor, sql, object_type):
         results_sql = f'SELECT "{dbname}", "schema_name", "name"'
     results_sql += ' FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))'
     if filter:
-        results_sql += """ WHERE "is_builtin" = 'N'"""
+        results_sql += filter
     
     dcursor.execute(results_sql)
     if object_type == 'Databases':
