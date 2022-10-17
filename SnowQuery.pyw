@@ -330,7 +330,7 @@ def build_database_tree(window, dcursor):
         'Procedures']
 
     # Get databases
-    sql = 'SHOW DATABASES IN ACCOUNT;'
+    sql = 'SHOW DATABASES IN ACCOUNT'
     dbs = get_metadata(dcursor, sql, 'Databases')
     for db in dbs:
         # Add database to tree
@@ -338,7 +338,7 @@ def build_database_tree(window, dcursor):
         tree_data.Insert('',db_key,db,[])
 
     # Get database schemas
-    sql = 'SHOW SCHEMAS IN ACCOUNT;'
+    sql = 'SHOW SCHEMAS IN ACCOUNT'
     schemas = get_metadata(dcursor, sql, 'Schemas')
     for db, schema in schemas:
         # Add schema to tree
@@ -357,7 +357,7 @@ def build_database_tree(window, dcursor):
 
     # Get schema objects
     for object_type in object_types:
-        sql = f'SHOW {object_type} IN ACCOUNT;'
+        sql = f'SHOW {object_type} IN ACCOUNT'
         schema_objects = get_metadata(dcursor, sql, object_type)
         for db, schema, name in schema_objects:
             # Add schema object to tree
@@ -370,8 +370,8 @@ def build_database_tree(window, dcursor):
 
 def get_metadata(dcursor, sql, object_type):
     ''' Get requested database metadata from Snowflake '''
-    dcursor.execute(sql)
 
+    # Set database name column, and filter for functions and procedures
     if object_type in ('Functions', 'Procedures'):
         dbname = 'catalog_name'
         filter = """ WHERE "is_builtin" = 'N'"""
@@ -379,6 +379,7 @@ def get_metadata(dcursor, sql, object_type):
         dbname = 'database_name'
         filter = None
 
+    # Build results SQL
     if object_type == 'Databases':
         results_sql = 'SELECT "name"'
     elif object_type == 'Schemas':
@@ -389,7 +390,19 @@ def get_metadata(dcursor, sql, object_type):
     if filter:
         results_sql += filter
     
-    dcursor.execute(results_sql)
+    # Build and execute query
+    query = f"""
+    declare
+        res resultset;
+    begin
+        {sql};
+        res := ({results_sql});
+        return table (res);
+    end;
+    """
+    dcursor.execute(query)
+
+    # Extract and return results
     if object_type == 'Databases':
         metadata = [row['name'] for row in dcursor]
     elif object_type == 'Schemas':
