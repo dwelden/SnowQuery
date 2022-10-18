@@ -53,7 +53,9 @@ def show_window(cursor, dcursor):
          'Select All::Select All~-OUTPUT-']]
     tree_context_menu = ['',
         ['Copy::Copy~-TREE-',
-         'Paste name in query::Paste~-TREE-']]
+         'Paste name in query::Paste~-TREE-',
+         '---',
+         'Refresh::Refresh~-TREE-']]
     tree_data = sg.TreeData()
     left_column = sg.Frame('Databases',
         [   [sg.Tree(data=tree_data,
@@ -117,12 +119,12 @@ def show_window(cursor, dcursor):
     window.bind('<Control-q>', quit_event)
     window.bind('<F1>', help_event)
 
-    # Start thread to build database tree
-    threading.Thread(
-        target=build_database_tree,
-        args=(window,dcursor,),
-        daemon=True
-    ).start()
+    # Store cursors in window metadata
+    window_metadata = dict(cursor=cursor, dcursor=dcursor)
+    window.metadata = window_metadata
+
+    # Build database tree
+    refresh_tree(window, '')
 
     # Event Loop to process "events"
     while True:             
@@ -145,12 +147,13 @@ def show_window(cursor, dcursor):
             show_about(window)
         elif event == run_event:
             query = values["-QUERY-"]
-            run(window, query, cursor, run_event)
+            run(window, query, run_event)
         elif (event in query_context_menu[1]
           or event in output_context_menu[1]):
             do_clipboard_operation(event, window)
         elif event in tree_context_menu[1]:
-            do_tree_operation(event, window, values['-TREE-'])
+            selection = values['-TREE-'][0]
+            do_tree_operation(event, window, selection)
 
     window.close()
     del window
@@ -159,10 +162,13 @@ def show_window(cursor, dcursor):
 
 def do_tree_operation(event, window, value):
     ''' Execute tree context menu event'''
-    window.TKroot.clipboard_clear()
-    window.TKroot.clipboard_append(value)
-    if event == 'Paste name in query::Paste~-TREE-':
-        window.write_event_value('Paste::Paste~-QUERY-', '')
+    if event in ('Copy::Copy~-TREE-','Paste name in query::Paste~-TREE-'):
+        window.TKroot.clipboard_clear()
+        window.TKroot.clipboard_append(value)
+        if event == 'Paste name in query::Paste~-TREE-':
+            window.write_event_value('Paste::Paste~-QUERY-', '')
+    elif event == 'Refresh::Refresh~-TREE-':
+        refresh_tree(window, value)
 
 def do_clipboard_operation(event, window):
     ''' Execute multiline context event '''
@@ -279,9 +285,10 @@ def get_popup_location(window):
         
     return popup_location
 
-def run(window, query, cursor, run_event):
+def run(window, query, run_event):
     ''' Execute query and display output '''
     window['-OUTPUT-'].update('')
+    cursor = window.metadata['cursor']
     if query:
         # Execute query and return output
         query_error, output = submit_query(cursor, query)
@@ -314,9 +321,44 @@ def submit_query(cursor, query):
         output = e.__repr__()
     return((query_error,output))
 
-def build_database_tree(window, dcursor):
-    ''' Retrieve database metadata from Snowflake and build tree '''
-    tree_data = sg.TreeData()
+def refresh_tree(window, node_key):
+    ''' Prune and rebuild tree under selected node '''
+    tree_data = window['-TREE-'].TreeData
+    node = get_node(tree_data, node_key)
+    prune(tree_data, node)
+    window['-TREE-'].update(values=tree_data)
+    if node_key:
+        status = f'Refreshing...'
+        window['-STATUSBAR-'].update(value=status)
+
+    # Start thread to build database tree
+    threading.Thread(
+        target=build_tree,
+        args=(window,tree_data,node),
+        daemon=True
+    ).start()
+
+def get_node(tree_data, node_key):
+    ''' Get node by key '''
+    tree_dict = tree_data.tree_dict
+    return tree_dict.get(node_key)
+
+def prune(tree_data, node):
+    ''' Delete all descendant nodes under selected node '''
+    descendant_nodes = get_descendant_nodes(node, [])
+    for parent_node, node in descendant_nodes:
+        parent_node.children.remove(node)
+        del tree_data.tree_dict[node.key]
+
+def get_descendant_nodes(node, descendant_nodes):
+    ''' Collect and return all descendant nodes of selected node '''
+    for child in node.children:
+        descendant_nodes.append([node, child])
+        descendant_nodes = get_descendant_nodes(child, descendant_nodes)
+    return descendant_nodes
+
+def build_tree(window, tree_data, node):
+    ''' Retrieve database metadata from Snowflake and build tree below node '''
     object_types = [
         'Tables',
         'Views',
@@ -329,22 +371,53 @@ def build_database_tree(window, dcursor):
         'Functions',
         'Procedures']
 
-    # Get databases
-    sql = 'SHOW DATABASES IN ACCOUNT'
-    dbs = get_metadata(dcursor, sql, 'Databases')
-    for db in dbs:
-        # Add database to tree
-        db_key = f'{db}'
-        tree_data.Insert('',db_key,db,[])
+    # Get node level
+    if node.key == '':
+        node_level = 'Root'
+    else:
+        node_level = node.values[0]
 
-    # Get database schemas
-    sql = 'SHOW SCHEMAS IN ACCOUNT'
-    schemas = get_metadata(dcursor, sql, 'Schemas')
+    dcursor = window.metadata['dcursor']
+    if node_level == 'Root':
+        scope = 'ACCOUNT'
+        get_databases(dcursor, tree_data, scope)
+        get_schemas(dcursor, tree_data, scope, object_types)
+        for object_type in object_types:
+            get_schema_objects(dcursor, tree_data, object_type, scope)
+    elif node_level == 'Database':
+        scope = f'{node_level} {node.key}'
+        get_schemas(dcursor, tree_data, scope, object_types)
+        for object_type in object_types:
+            get_schema_objects(dcursor, tree_data, object_type, scope)
+    elif node_level == 'Schema':
+        scope = f'{node_level} {node.key}'
+        for object_type in object_types:
+            get_schema_objects(dcursor, tree_data, object_type, scope)
+    elif node_level in object_types:
+        scope = f'Schema {node.parent}'
+        get_schema_objects(dcursor, tree_data, node_level, scope)
+
+    window['-TREE-'].update(values=tree_data)
+    window['-STATUSBAR-'].update(value='Ready')
+
+def get_databases(dcursor, tree_data, scope):
+    ''' Get databases '''
+    dbs = get_metadata(dcursor, 'Databases', scope)
+
+    # Add databases to tree
+    for db in dbs:
+        db_key = db
+        tree_data.Insert('',db_key,db,['Database',])
+
+def get_schemas(dcursor, tree_data, scope, object_types):
+    ''' Get database schemas '''
+    schemas = get_metadata(dcursor, 'Schemas', scope)
+
+    # Add schemas to tree
     for db, schema in schemas:
-        # Add schema to tree
-        db_key = f'{db}'
+        db_key = db
         schema_key = f'{db}.{schema}'
-        tree_data.Insert(db_key,schema_key,schema,[])
+        tree_data.Insert(db_key,schema_key,schema,['Schema',])
 
         # Get schema object types
         for object_type in object_types:
@@ -355,21 +428,24 @@ def build_database_tree(window, dcursor):
             object_type_key = f'{db}.{schema}-{object_type}'
             tree_data.Insert(schema_key,object_type_key,object_type,[])
 
-    # Get schema objects
-    for object_type in object_types:
-        sql = f'SHOW {object_type} IN ACCOUNT'
-        schema_objects = get_metadata(dcursor, sql, object_type)
-        for db, schema, name in schema_objects:
-            # Add schema object to tree
-            object_type_key = f'{db}.{schema}-{object_type}'
-            schema_object_key = f'{db}.{schema}.{name}'
-            tree_data.Insert(object_type_key,schema_object_key,name,[])
+def get_schema_objects(dcursor, tree_data, object_type, scope):
+    ''' Get schema objects'''
+    schema_objects = get_metadata(dcursor, object_type, scope)
 
-    window['-TREE-'].update(values=tree_data)
-    window['-STATUSBAR-'].update(value='Ready')
+    # Add schema objects to tree
+    for db, schema, name in schema_objects:
+        object_type_key = f'{db}.{schema}-{object_type}'
+        if not get_node(tree_data, object_type_key):
+            # Add schema object type to tree
+            schema_key = f'{db}.{schema}'
+            tree_data.Insert(schema_key,object_type_key,object_type,[object_type,])
 
-def get_metadata(dcursor, sql, object_type):
+        schema_object_key = f'{db}.{schema}.{name}'
+        tree_data.Insert(object_type_key,schema_object_key,name,['leaf',])
+
+def get_metadata(dcursor, object_type, scope):
     ''' Get requested database metadata from Snowflake '''
+    sql = f'SHOW {object_type} IN {scope}'
 
     # Set database name column, and filter for functions and procedures
     if object_type in ('Functions', 'Procedures'):
