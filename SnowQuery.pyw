@@ -383,19 +383,19 @@ def build_tree(window, tree_data, node):
         get_databases(dcursor, tree_data, scope)
         get_schemas(dcursor, tree_data, scope, object_types)
         for object_type in object_types:
-            get_schema_objects(dcursor, tree_data, object_type, scope)
+            get_schema_objects(dcursor, tree_data, object_type, object_types, scope)
     elif node_level == 'Database':
         scope = f'{node_level} {node.key}'
         get_schemas(dcursor, tree_data, scope, object_types)
         for object_type in object_types:
-            get_schema_objects(dcursor, tree_data, object_type, scope)
+            get_schema_objects(dcursor, tree_data, object_type, object_types, scope)
     elif node_level == 'Schema':
         scope = f'{node_level} {node.key}'
         for object_type in object_types:
-            get_schema_objects(dcursor, tree_data, object_type, scope)
+            get_schema_objects(dcursor, tree_data, object_type, object_types, scope)
     elif node_level in object_types:
         scope = f'Schema {node.parent}'
-        get_schema_objects(dcursor, tree_data, node_level, scope)
+        get_schema_objects(dcursor, tree_data, node_level, object_types, scope)
 
     window['-TREE-'].update(values=tree_data)
     window['-STATUSBAR-'].update(value='Ready')
@@ -419,27 +419,24 @@ def get_schemas(dcursor, tree_data, scope, object_types):
         schema_key = f'{db}.{schema}'
         tree_data.Insert(db_key,schema_key,schema,['Schema',])
 
-        # Get schema object types
-        for object_type in object_types:
-            # INFORMATION_SCHEMA has only Views
-            if schema == 'INFORMATION_SCHEMA' and object_type != 'Views':
-                continue
-            # Add schema object type to tree
-            object_type_key = f'{db}.{schema}-{object_type}'
-            tree_data.Insert(schema_key,object_type_key,object_type,[])
-
-def get_schema_objects(dcursor, tree_data, object_type, scope):
+def get_schema_objects(dcursor, tree_data, object_type, object_types, scope):
     ''' Get schema objects'''
     schema_objects = get_metadata(dcursor, object_type, scope)
 
     # Add schema objects to tree
     for db, schema, name in schema_objects:
-        object_type_key = f'{db}.{schema}-{object_type}'
-        if not get_node(tree_data, object_type_key):
-            # Add schema object type to tree
-            schema_key = f'{db}.{schema}'
-            tree_data.Insert(schema_key,object_type_key,object_type,[object_type,])
+        # Add schema object types to tree
+        for obj_type in object_types:
+            # INFORMATION_SCHEMA has only Views
+            if schema == 'INFORMATION_SCHEMA' and obj_type != 'Views':
+                continue
+            obj_type_key = f'{db}.{schema}-{obj_type}'
+            if not get_node(tree_data, obj_type_key):
+                # Add schema object type to tree
+                schema_key = f'{db}.{schema}'
+                tree_data.Insert(schema_key,obj_type_key,obj_type,[obj_type,])
 
+        object_type_key = f'{db}.{schema}-{object_type}'
         schema_object_key = f'{db}.{schema}.{name}'
         tree_data.Insert(object_type_key,schema_object_key,name,['leaf',])
 
