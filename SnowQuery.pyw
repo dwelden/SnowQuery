@@ -177,6 +177,7 @@ def do_clipboard_operation(event, window):
     element:sg.Multiline = window[element]
 
     if event == 'Select All':
+        element.Widget.focus_set()
         element.Widget.selection_clear()
         element.Widget.tag_add('sel', '1.0', 'end')
     elif event == 'Copy':
