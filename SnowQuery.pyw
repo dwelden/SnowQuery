@@ -186,7 +186,7 @@ def do_clipboard_operation(event, window):
             window.TKroot.clipboard_clear()
             window.TKroot.clipboard_append(text)
         except:
-            print('Nothing selected')
+            show_message(window, 'Nothing selected')
     elif event == 'Paste':
         element.Widget.insert(sg.tk.INSERT, window.TKroot.clipboard_get())
     elif event == 'Cut':
@@ -196,12 +196,12 @@ def do_clipboard_operation(event, window):
             window.TKroot.clipboard_append(text)
             element.Widget.delete("sel.first", "sel.last")
         except:
-            print('Nothing selected')
+            show_message(window, 'Nothing selected')
     elif event == 'Delete':
         try:
             element.Widget.delete("sel.first", "sel.last")
         except:
-            print('Nothing selected')
+            show_message(window, 'Nothing selected')
 
 def new_file(window, new_query):
     ''' Create a new query '''
@@ -274,6 +274,14 @@ def show_about(window):
         '❖  PrettyTable https://github.com/jazzband/prettytable',
         font=window.Font,
         title='About',
+        location=popup_location)
+
+def show_message(window, message):
+    ''' Show message popup '''
+    popup_location = get_popup_location(window)
+    sg.popup(
+        message,
+        font=window.Font,
         location=popup_location)
 
 def get_popup_location(window):
