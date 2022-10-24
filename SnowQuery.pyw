@@ -260,6 +260,7 @@ def show_help(window, run_event):
         f'Press {run_event} or F5 to run query',
         'Press Control-Q to quit',
         font=window.Font,
+        button_justification='centered',
         title='Help',
         location=popup_location)
 
@@ -273,6 +274,7 @@ def show_about(window):
         '❄  Snowflake Connector for Python https://www.snowflake.com/',
         '❖  PrettyTable https://github.com/jazzband/prettytable',
         font=window.Font,
+        button_justification='centered',
         title='About',
         location=popup_location)
 
@@ -282,6 +284,7 @@ def show_message(window, message):
     sg.popup(
         message,
         font=window.Font,
+        button_justification='centered',
         location=popup_location)
 
 def get_popup_location(window):
