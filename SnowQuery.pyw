@@ -375,13 +375,13 @@ def build_tree(window, tree_data, node):
         'Tables',
         'Views',
         'Stages',
-        'File Formats',
-        'Sequences',
         'Pipes',
         'Streams',
         'Tasks',
         'Functions',
-        'Procedures']
+        'Procedures',
+        'File Formats',
+        'Sequences']
 
     # Get node level
     if node.key == '':
