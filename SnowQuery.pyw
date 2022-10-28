@@ -219,7 +219,7 @@ def open_file(window):
         no_window=True,
         file_types=(('.SQL files','*.sql'),('All files','*.*')))
     if query_file:
-        with open(query_file,'r') as f:
+        with open(query_file,'r',encoding='utf-8') as f:
             text = f.read()
             window['-QUERYNAME-'].update(os.path.basename(query_file))
             window['-QUERYNAME-'].set_tooltip(query_file)
