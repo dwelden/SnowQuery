@@ -231,7 +231,7 @@ def save_file(window, query_file):
     ''' Save query to file '''
     if query_file:
         text = window['-QUERY-'].get()
-        with open(query_file,'w') as f:
+        with open(query_file,'w', encoding='utf-8') as f:
             f.write(text)
     else:
         save_file_as(window)
@@ -245,7 +245,7 @@ def save_file_as(window):
         file_types=(('.SQL files','*.sql'),('All files','*.*')))
     if query_file:
         text = window['-QUERY-'].get()
-        with open(query_file,'w') as f:
+        with open(query_file,'w', encoding='utf-8') as f:
             f.write(text)
             window['-QUERYNAME-'].update(os.path.basename(query_file))
             window['-QUERYNAME-'].set_tooltip(query_file)
