@@ -313,6 +313,7 @@ def show_about(window):
         '🐍 PySimpleGUI https://PySimpleGUI.org',
         '❄  Snowflake Connector for Python https://www.snowflake.com/',
         '❖  PrettyTable https://github.com/jazzband/prettytable',
+        '☯  Reskinner Plugin for PySimpleGUI https://github.com/definite-d/PSG_Reskinner',
         font=window.Font,
         button_justification='centered',
         title='About',
