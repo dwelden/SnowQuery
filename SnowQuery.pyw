@@ -49,7 +49,7 @@ def show_window(cursor, dcursor):
             ['&' + new_event,
              '&' + open_event,
              '&' + save_event,
-             save_as_event,
+             save_as_event.replace('A','&A'),
              '---',
              '&' + quit_event]],
         ['&Help',
