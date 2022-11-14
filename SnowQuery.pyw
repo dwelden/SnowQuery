@@ -65,6 +65,8 @@ def show_window(cursor, dcursor):
     output_context_menu = ['',
         ['Copy::Copy~-OUTPUT-',
          'Select All::Select All~-OUTPUT-']]
+    query_id_context_menu = ['',
+        ['Copy::Copy~-QUERYID-',]]
     tree_context_menu = ['',
         ['Copy::Copy~-TREE-',
          'Paste name in query::Paste~-TREE-',
@@ -118,10 +120,30 @@ def show_window(cursor, dcursor):
                 expand_y=True)]],
         expand_x=True,
         expand_y=True)
+    status_bars = [
+        sg.Multiline(
+            'Loading databases...',
+            no_scrollbar=True,
+            expand_x=True,
+            key='-STATUSBAR-'),
+        sg.Multiline(
+            disabled=True,
+            size=36,
+            tooltip='Query ID (right-click to copy)',
+            right_click_menu=query_id_context_menu,
+            no_scrollbar=True,
+            key='-QUERYID-'),
+        sg.Multiline(
+            disabled=True,
+            size=12,
+            tooltip='Query duration',
+            justification='right',
+            no_scrollbar=True,
+            key='-QUERYDURATION-')]
     layout = [
         [sg.Menu(menu_def)],
         [left_column, right_column],
-        [sg.StatusBar('Loading databases...',key='-STATUSBAR-')]]
+        [status_bars]]
 
     # Create the Window
     icon = get_icon()
@@ -177,6 +199,8 @@ def show_window(cursor, dcursor):
         elif (event in query_context_menu[1]
           or event in output_context_menu[1]):
             do_clipboard_operation(event, window)
+        elif event in query_id_context_menu[1]:
+            copy_query_id(event, window)
         elif event in tree_context_menu[1]:
             selection = values['-TREE-'][0]
             do_tree_operation(event, window, selection)
@@ -243,6 +267,25 @@ def do_clipboard_operation(event, window):
         except:
             show_message(window, 'Nothing selected')
 
+def copy_query_id(event, window):
+    ''' Copy query id '''
+    event, element = event.split('~')
+    event = event.split(':',maxsplit=1)[0]
+    element:sg.Multiline = window[element]
+
+    # Select all
+    element.Widget.focus_set()
+    element.Widget.selection_clear()
+    element.Widget.tag_add('sel', '1.0', 'end')
+    # Copy
+    try:
+        text = element.Widget.selection_get()
+        window.TKroot.clipboard_clear()
+        window.TKroot.clipboard_append(text)
+    except:
+        show_message(window, 'Nothing selected')
+    element.Widget.selection_clear()
+
 def new_file(window, new_query):
     ''' Create a new query '''
     query_file = None
@@ -250,6 +293,8 @@ def new_file(window, new_query):
     window['-QUERYNAME-'].set_tooltip(new_query)
     window['-QUERY-'].update('')
     window['-OUTPUT-'].update('')
+    window['-QUERYID-'].update('')
+    window['-QUERYDURATION-'].update('')
     return query_file
 
 def open_file(window):
@@ -265,6 +310,8 @@ def open_file(window):
             window['-QUERYNAME-'].set_tooltip(query_file)
             window['-QUERY-'].update(text)
             window['-OUTPUT-'].update('')
+            window['-QUERYID-'].update('')
+            window['-QUERYDURATION-'].update('')
     return query_file
 
 def save_file(window, query_file):
@@ -341,10 +388,12 @@ def get_popup_location(window):
 def run(window, query, run_event):
     ''' Execute query and display output '''
     window['-OUTPUT-'].update('')
+    window['-QUERYID-'].update('')
+    window['-QUERYDURATION-'].update('')
     cursor = window.metadata['cursor']
     if query:
         # Execute query and return output
-        query_error, output = submit_query(cursor, query)
+        query_error, output, query_details = submit_query(cursor, query)
         if query_error:
             # Display error output
             window['-OUTPUT-'].print(
@@ -353,15 +402,23 @@ def run(window, query, run_event):
         else:
             # Display query output
             window['-OUTPUT-'].print(output)
+            window['-QUERYID-'].update(query_details['query_id'])
+            window['-QUERYDURATION-'].update(query_details['query_duration'])
     else:
         show_help(window, run_event)
 
 def submit_query(cursor, query):
     ''' Submit query to Snowflake and return formatted output '''
     query_error = False
+    query_details = {
+        "query_id"       : '',
+        "query_duration" : ''
+    }
     try:
         cursor.execute(query)
         output = pt.from_db_cursor(cursor)
+        query_details['query_id'] = cursor.sfqid
+        query_details['query_duration'] = query_duration(cursor)
 
         # Format output as Markdown table using pretty table
         output.set_style(pt.MARKDOWN)
@@ -372,7 +429,23 @@ def submit_query(cursor, query):
     except Exception as e:
         query_error = True
         output = e.__repr__()
-    return((query_error,output))
+    return((query_error, output, query_details))
+
+def query_duration(cursor):
+    ''' Get duration of last execute query '''
+    query_id = cursor.sfqid
+    sql = f"""
+        select
+            to_varchar(
+                time_from_parts(0, 0, 0, total_elapsed_time * 1000000)
+            ) as elapsed
+        from table(information_schema.query_history())
+        where query_id = '{query_id}'"""
+    try:
+        query_duration = cursor.execute(sql).fetchone()[0]
+    except:
+        query_duration = ''
+    return query_duration
 
 def refresh_tree(window, node_key):
     ''' Prune and rebuild tree under selected node '''
