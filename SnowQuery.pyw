@@ -417,8 +417,6 @@ def submit_query(cursor, query):
     try:
         cursor.execute(query)
         output = pt.from_db_cursor(cursor)
-        query_details['query_id'] = cursor.sfqid
-        query_details['query_duration'] = query_duration(cursor)
 
         # Format output as Markdown table using pretty table
         output.set_style(pt.MARKDOWN)
@@ -426,6 +424,9 @@ def submit_query(cursor, query):
         for column in cursor.description:
             if column.precision:
                 output.align[column.name] = "r"
+
+        query_details['query_id'] = cursor.sfqid
+        query_details['query_duration'] = query_duration(cursor)
     except Exception as e:
         query_error = True
         output = e.__repr__()
@@ -626,7 +627,7 @@ def get_icon():
 def get_toggle_images():
     ''' Get toggle theme button images '''
     toggle_images = {
-        'dark': b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAF/SURBVFhH7ZdBToNAFIZfJ1BL3ZHYpV1xHRLpQj2CegMOwFXURV1wHY7QbmtVkJqH8ygMkJJMnh2T+RIyMGXx5c30zc/E9/0DGIyQo7FYQV2soC5WUJeTfTAMQ3nHQ5qm8q6fQcHbu3soyxI+P/ZyhoeLmQdCCHh9eZYzbTqCKJbnX1DkuZz5GxzXhbf1Wj4daQmi3P59J5/Ogze/bFWz/pOYIIegA7oQleApuSAIWhc3TZdqiW+iCL6LQk4dIZk4jquRSJKkGrMsq0YOaE9OHh6fDn3VQzlVTAVFOSWvl0sQ2EpUxsgh+A7nkm82WxDcfU4HXNnOUTe2egR3FW1Y0OX/CWLboD43Bu5WIzBNmMrMm2PS6a7y2CpyV2+xuPo96qLVqjdeUftQ2w7Jc8rVRx0KjgkLTTjFCEradR40JW4hzUxYb0CcwB/wOidqYG0lamJoT3LiTqfgOG7n26RXEKFUy73stGKqGDEoSBj72WkKNizoYgV1sYK6GC4I8APXEqUV10lXowAAAABJRU5ErkJggg==',
+        'dark': b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAF9SURBVFhH7ZdRToQwEEBnCcVl/eMOXIdE9kM9gnoDDsBV1I/1g+twDl21yOrUli0sDSR1lpr0JaS08PEyU6bDKkmSAzhMIEdn8YK2eEFbvKAtk3UwyzJ59/eEjMHLbidn4xgFr29uoW1b+HjfyxUaUBIxiZ4Iohjnn9BwLlfOgymaPUGU27+9ytkyDEW7j8QFOQQzl2+3ciYFp+TSNO1d1OjbS6T4Ks/hq2nk0hElUxSFGBVlWYqxrmsxUqBSvbq7fziMRQ/lhmJDUJRaMsBSMmSOHILvUKacsQgC6jpnA2b25KibGz0FdRR9s2DL/xPEsqHq3ByoS01wsY7lrXus4w0EP8jpkblRpI5e0/Dfow4P57H2SpWPYdlR8tSniDjqUHBOs6BDKaaoqkqMXT/oSruF6D1htwGfnx4h3lyKh0uiyyG9jlph2pOUsCiCMGQiUDqjggimHKFOO2YN/4H0qOkYBRWUv52I+hhMTAoujW8WbPGCtnhBWxwXBPgGhwinxwj3/s8AAAAASUVORK5CYII=',
         'light': b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKpSURBVFhH7ZbPaxNBFMdnZjdZUZoeihakCJLaQympFCGlevTQBmpJD/0DPEoFDxIVFEIPBsUi0rv/QKAlKqmC4EXFRARTe/FXDiKKVoUa0GQ3O+N7yWzdbYgkcSIV9pNDdn5/eW/ee0N8fHx8fHY2VP43EE/e22dX7JnieGRJUBaAmUzIsb8FDhX4o5xb4Xxh3hQ0s5qKbchhDw0Cp05nDaOXJV5HIwuCMdinu6AAEEoGc88vmpvk2upSrFIfqeMReCKR2V88euQd1zRNNLVtd6BgCWbb1aHciwPLlyc/yu7fAmcT2YGXxw6DONYVabjpLo0SXe5eBUFlGz3thdlchB8+Hbh1deYDtmvTp5O3dxfHxkpgOYZtleCGoSAjj4/vrXdsY+L+BvlucsJlGwFL2sMPHvWkr8/9rAnSqtp5wdSLC4Iz1mP9TcUhOIZzAi7Hwd3XrD2hs/hN4xeW+15NjH/hEBAqwfPWp/plqzVGsp+2LMkgcIafrfUxTo04RqtqQoH298Sr4ACpjZiQ5uhI5n3Z1nVD9isBj0G3dYLbippVLTNQGpRtZRgQrZ3iXgueNUCgNxeqAIOjUzzBAtrUXz7FMMjgyquZyTvf0nKtRW0gkJuyrQysEJ3iXgs1usLCucI81kGV4HZYIdoF1zhSqBAEtJ1iTFRWwIqyWx1Yvtpl07UGBQYNLcNWUrNfB/NrC9ihEjxq9O7neqMFcK7beoeeFC6lk5PfalHMNesK+NuujSoELzwm3j+5G8dwjjs44EVjB36UFvF7K+n8q+eWkyMx0lt+bjns6AerAz75g73szJtoJAWlRnWAN4AC4HqJoVzhnK6XbqSTc56019ROYM0equvTb6OjN7Feqy6JmIQhe1QO5gsnqVW9Ay4tySEfHx8fn/8HQn4BR5shhwHpGZ8AAAAASUVORK5CYII='
     }
     return toggle_images
