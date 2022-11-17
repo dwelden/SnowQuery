@@ -284,7 +284,7 @@ def copy_query_id(event, window):
         window.TKroot.clipboard_append(text)
     except:
         show_message(window, 'Nothing selected')
-    element.Widget.selection_clear()
+    element.Widget.tag_remove('sel', '1.0', 'end')
 
 def new_file(window, new_query):
     ''' Create a new query '''
