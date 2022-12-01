@@ -1,6 +1,7 @@
 import json
 import os.path
 import threading
+from string import ascii_uppercase, digits
 from sys import argv
 
 import prettytable as pt
@@ -533,7 +534,7 @@ def get_databases(dcursor, tree_data, scope):
 
     # Add databases to tree
     for db in dbs:
-        db_key = db
+        db_key = format_identifier(db)
         tree_data.Insert('',db_key,db,['Database',])
 
 def get_schemas(dcursor, tree_data, scope, object_types):
@@ -543,7 +544,7 @@ def get_schemas(dcursor, tree_data, scope, object_types):
     # Add schemas to tree
     for db, schema in schemas:
         db_key = db
-        schema_key = f'{db}.{schema}'
+        schema_key = f'{format_identifier(db)}.{format_identifier(schema)}'
         tree_data.Insert(db_key,schema_key,schema,['Schema',])
 
 def get_schema_objects(dcursor, tree_data, object_type, object_types, scope):
@@ -557,15 +558,43 @@ def get_schema_objects(dcursor, tree_data, object_type, object_types, scope):
             # INFORMATION_SCHEMA has only Views
             if schema == 'INFORMATION_SCHEMA' and obj_type != 'Views':
                 continue
-            obj_type_key = f'{db}.{schema}-{obj_type}'
+            formatted_db = f'{format_identifier(db)}'
+            formatted_schema = f'{format_identifier(schema)}'
+            obj_type_key = f'{formatted_db}.{formatted_schema}-{obj_type}'
             if not get_node(tree_data, obj_type_key):
                 # Add schema object type to tree
-                schema_key = f'{db}.{schema}'
-                tree_data.Insert(schema_key,obj_type_key,obj_type,[obj_type,])
+                schema_key = f'{format_identifier(db)}.{format_identifier(schema)}'
+                tree_data.Insert(schema_key,obj_type_key,obj_type,[obj_type,'',])
 
-        object_type_key = f'{db}.{schema}-{object_type}'
-        schema_object_key = f'{db}.{schema}.{name}'
+        formatted_db = f'{format_identifier(db)}'
+        formatted_schema = f'{format_identifier(schema)}'
+        formatted_name = f'{format_identifier(name)}'
+        object_type_key = f'{formatted_db}.{formatted_schema}-{object_type}'
+        schema_object_key = f'{formatted_db}.{formatted_schema}.{formatted_name}'
         tree_data.Insert(object_type_key,schema_object_key,name,['leaf',])
+
+def format_identifier(id):
+    ''' Quote format the identifier if needed.
+        Unquoted identifiers:
+            a. Start with letter A-Z or an underscore (_)
+            b. Contain only letters A-Z, underscores, digits 0-9, and dollar signs ($)
+            c. To use the double quote character (") inside a quoted identifier, use two quotes.
+    '''
+    unquoted_ok = True
+    unquoted_intials = ascii_uppercase + '_'
+    unquoted_characters = set(unquoted_intials + digits + '$')
+
+    id_initial = id[0]
+    id_characters = set(id)
+    if id_initial not in unquoted_intials:
+        unquoted_ok = False     # rule a.
+    elif id_characters - unquoted_characters:
+        unquoted_ok = False     # rule b.
+
+    if unquoted_ok:
+        return id
+    else:
+        return f'''"{id.replace('"','""')}"'''  # rule c.
 
 def get_metadata(dcursor, object_type, scope):
     ''' Get requested database metadata from Snowflake '''
