@@ -39,6 +39,7 @@ def show_window(cursor, dcursor):
     quit_event    = 'Quit     Ctrl+Q'
     help_event    = 'Help     F1'
     about_event   = 'About'
+    refresh_event = '⟳'
 
     # Query file name and label
     query_file = None
@@ -75,7 +76,7 @@ def show_window(cursor, dcursor):
          'Refresh::Refresh~-TREE-']]
     tree_data = sg.TreeData()
     left_column = sg.Column(
-        [   [sg.Text('Databases')],
+        [   [sg.Text('Databases'),sg.Push(),sg.Button(refresh_event,tooltip='Refresh')],
             [sg.Tree(data=tree_data,
                     headings=[],
                     auto_size_columns=True,
@@ -123,7 +124,6 @@ def show_window(cursor, dcursor):
         expand_y=True)
     status_bars = [
         sg.Multiline(
-            'Loading databases...',
             no_scrollbar=True,
             expand_x=True,
             key='-STATUSBAR-'),
@@ -194,6 +194,8 @@ def show_window(cursor, dcursor):
             show_help(window, run_event)
         elif event == about_event:
             show_about(window)
+        elif event == refresh_event:
+            refresh_tree(window, '')
         elif event == run_event:
             query = values["-QUERY-"]
             run(window, query, run_event)
@@ -453,11 +455,16 @@ def refresh_tree(window, node_key):
     ''' Prune and rebuild tree under selected node '''
     tree_data = window['-TREE-'].TreeData
     node = get_node(tree_data, node_key)
-    prune(tree_data, node)
-    window['-TREE-'].update(values=tree_data)
     if node_key:
-        status = f'Refreshing...'
+        status = 'Refreshing...'
         window['-STATUSBAR-'].update(value=status)
+        prune(tree_data, node)
+    else:
+        status = 'Loading databases...'
+        window['-STATUSBAR-'].update(value=status)
+        tree_data = sg.TreeData()
+
+    window['-TREE-'].update(values=tree_data)
 
     # Start thread to build database tree
     threading.Thread(
@@ -613,11 +620,14 @@ def get_metadata(dcursor, object_type, scope):
         results_sql = 'SELECT "name"'
     elif object_type == 'Schemas':
         results_sql = 'SELECT "database_name", "name"'
+    elif object_type in ('Functions', 'Procedures'):
+        results_sql = f'''SELECT "{dbname}", "schema_name", REGEXP_REPLACE("arguments", ' RETURN .*', '') as "name"'''
     else:
         results_sql = f'SELECT "{dbname}", "schema_name", "name"'
     results_sql += ' FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))'
     if filter:
         results_sql += filter
+    results_sql += ' ORDER BY "name"'
     
     # Build and execute query
     query = f"""
