@@ -7,6 +7,6 @@ Simple Snowflake query application created with: <br>
 &nbsp;&nbsp;&nbsp;☯&nbsp;Reskinner Plugin for PySimpleGUI https://github.com/definite-d/PSG_Reskinner <br>
 <br>
 
-![image](https://user-images.githubusercontent.com/11447810/201973594-125f05ca-0de0-450a-80b5-e63249d9908a.png)
+![image](https://user-images.githubusercontent.com/11447810/217314793-8334c675-48ac-42db-a200-95a9485ba4f0.png)
 
-![image](https://user-images.githubusercontent.com/11447810/201974851-b1e9b500-9f41-416e-a464-90ed17bbf257.png)
+![image](https://user-images.githubusercontent.com/11447810/217315918-4649e0ef-e3b5-42a0-bdd5-01b7a15328b1.png)
