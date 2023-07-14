@@ -157,6 +157,7 @@ def show_window(cursor, dcursor):
         finalize=True)
     tree = window['-TREE-']
     tree.Widget.configure(show='tree')
+    window['-QUERY-'].set_focus()
 
     # Bind keys to events
     window.bind('<F5>', run_event)
@@ -498,12 +499,13 @@ def build_tree(window, tree_data, node):
         'Tables',
         'Views',
         'Stages',
+        'File Formats',
+        'Functions',
+        'Procedures',
+        'Dynamic Tables',
         'Pipes',
         'Streams',
         'Tasks',
-        'Functions',
-        'Procedures',
-        'File Formats',
         'Sequences']
 
     # Get node level
@@ -683,11 +685,10 @@ def main():
 
     # Connect to Snowflake and create cursors
     with snowflake.connector.connect(**connection_parameters) as cnxn:
-        with cnxn.cursor() as cursor:
-            with cnxn.cursor(DictCursor) as dcursor:
+        with cnxn.cursor() as cursor, cnxn.cursor(DictCursor) as dcursor:
 
-                # Show window and begin event loop
-                show_window(cursor, dcursor)
+            # Show window and begin event loop
+            show_window(cursor, dcursor)
 
 if __name__ == '__main__':
     main()
