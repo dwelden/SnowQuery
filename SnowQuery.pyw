@@ -444,7 +444,7 @@ def query_duration(cursor):
             to_varchar(
                 time_from_parts(0, 0, 0, total_elapsed_time * 1000000)
             ) as elapsed
-        from table(information_schema.query_history())
+        from snowflake.account_usage.query_history
         where query_id = '{query_id}'"""
     try:
         query_duration = cursor.execute(sql).fetchone()[0]
