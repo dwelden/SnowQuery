@@ -70,7 +70,7 @@ class Model:
                 if not tree_data.tree_dict.get(obj_type_key):
                     # Add schema object type to tree
                     schema_key = f'{formatted_db}.{formatted_schema}'
-                    tree_data.Insert(schema_key,obj_type_key,obj_type,[obj_type,'',])
+                    tree_data.Insert(schema_key,obj_type_key,obj_type,[obj_type,])
 
             object_type_key = f'{formatted_db}.{formatted_schema}-{object_type}'
             schema_object_key = f'{formatted_db}.{formatted_schema}.{formatted_name}'
@@ -187,7 +187,7 @@ class Model:
                 to_varchar(
                     time_from_parts(0, 0, 0, total_elapsed_time * 1000000)
                 ) as elapsed
-            from snowflake.account_usage.query_history
+            from table(information_schema.query_history_by_session())
             where query_id = '{query_id}'"""
         try:
             query_duration = self.cursor.execute(sql).fetchone()[0]
