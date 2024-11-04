@@ -36,20 +36,6 @@ class Presenter:
         window['-TREE-'].update(values=tree_data)
         window['-STATUSBAR-'].update(value='Ready')
 
-    def prune(self, tree_data, node):
-        ''' Delete all descendant nodes under selected node '''
-        descendant_nodes = self.get_descendant_nodes(node, [])
-        for parent_node, node in descendant_nodes:
-            parent_node.children.remove(node)
-            del tree_data.tree_dict[node.key]
-
-    def get_descendant_nodes(self, node, descendant_nodes):
-        ''' Collect and return all descendant nodes of selected node '''
-        for child in node.children:
-            descendant_nodes.append([node, child])
-            descendant_nodes = self.get_descendant_nodes(child, descendant_nodes)
-        return descendant_nodes
-
     def submit_query(self, query):
         ''' Execute query and display output '''
         output, query_details = self.model.run_query(query)

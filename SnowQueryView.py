@@ -241,7 +241,7 @@ class View:
         if node_key:
             status = 'Refreshing...'
             self.window['-STATUSBAR-'].update(value=status)
-            self.presenter.prune(tree_data, node)
+            self.prune(tree_data, node)
         else:
             status = 'Loading databases...'
             self.window['-STATUSBAR-'].update(value=status)
@@ -255,6 +255,20 @@ class View:
             args=(self.window,tree_data,node),
             daemon=True
         ).start()
+
+    def prune(self, tree_data, node):
+        ''' Delete all descendant nodes under selected node '''
+        descendant_nodes = self.get_descendant_nodes(node, [])
+        for parent_node, node in descendant_nodes:
+            parent_node.children.remove(node)
+            del tree_data.tree_dict[node.key]
+
+    def get_descendant_nodes(self, node, descendant_nodes):
+        ''' Collect and return all descendant nodes of selected node '''
+        for child in node.children:
+            descendant_nodes.append([node, child])
+            descendant_nodes = self.get_descendant_nodes(child, descendant_nodes)
+        return descendant_nodes
 
     def do_clipboard_operation(self, event):
         ''' Execute multiline context event '''
