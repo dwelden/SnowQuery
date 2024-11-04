@@ -101,7 +101,7 @@ class Model:
 
     def get_metadata(self, object_type, scope):
         ''' Get requested database metadata from Snowflake '''
-        sql = f'SHOW {object_type} IN {scope}'
+        sql = f'SHOW TERSE {object_type} IN {scope}'
 
         # Set database name column, and filter for functions and procedures
         if object_type in ('Functions', 'Procedures'):
