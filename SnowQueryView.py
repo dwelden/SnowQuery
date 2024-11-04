@@ -69,10 +69,9 @@ class View:
             'Paste name in query::Paste~-TREE-',
             '---',
             'Refresh::Refresh~-TREE-']]
-        tree_data = sg.TreeData()
         left_column = sg.Column(
             [   [sg.Text('Databases'),sg.Push(),sg.Button(self.refresh_event,tooltip='Refresh')],
-                [sg.Tree(data=tree_data,
+                [sg.Tree(data=sg.TreeData(),
                         headings=[],
                         auto_size_columns=True,
                         select_mode=sg.TABLE_SELECT_MODE_EXTENDED,
@@ -164,6 +163,30 @@ class View:
 
         return
 
+    def set_presenter(self, presenter):
+        self.presenter = presenter
+
+    def set_tree_data(self, tree_data):
+        self.window['-TREE-'].update(values=tree_data)
+
+    def get_tree_data(self):
+        return self.window['-TREE-'].TreeData
+    
+    def set_status_bar(self, status):
+        self.window['-STATUSBAR-'].update(value=status)
+
+    def set_output_values(self, output_values, error):
+        for key, value in output_values.items():
+            if key == "-OUTPUT-":
+                if not value:
+                    self.window[key].update(value)
+                elif error:
+                    self.window[key].print(value, colors="red")
+                else:
+                    self.window[key].print(value)
+            else:
+                self.window[key].update(value)
+
     def show(self):
         ''' Show window and execute event loop '''
 
@@ -195,7 +218,7 @@ class View:
                 self.refresh_tree('')
             elif event == self.run_event:
                 query = values["-QUERY-"]
-                self.run(query)
+                self.presenter.submit_query(query)
             elif (event in self.query_context_menu[1]
             or event in self.output_context_menu[1]):
                 self.do_clipboard_operation(event)
@@ -236,28 +259,29 @@ class View:
 
     def refresh_tree(self, node_key):
         ''' Prune and rebuild tree under selected node '''
-        tree_data = self.window['-TREE-'].TreeData
+        tree_data = self.get_tree_data()
         node = tree_data.tree_dict.get(node_key)
         if node_key:
             status = 'Refreshing...'
-            self.window['-STATUSBAR-'].update(value=status)
-            self.prune(tree_data, node)
+            self.set_status_bar(status)
+            self.prune(node)
         else:
             status = 'Loading databases...'
-            self.window['-STATUSBAR-'].update(value=status)
+            self.set_status_bar(status)
             tree_data = sg.TreeData()
 
-        self.window['-TREE-'].update(values=tree_data)
+        self.set_tree_data(tree_data)
 
         # Start thread to build database tree
         threading.Thread(
             target=self.presenter.build_tree,
-            args=(self.window,tree_data,node),
+            args=(node,),
             daemon=True
         ).start()
 
-    def prune(self, tree_data, node):
+    def prune(self, node):
         ''' Delete all descendant nodes under selected node '''
+        tree_data = self.get_tree_data()
         descendant_nodes = self.get_descendant_nodes(node, [])
         for parent_node, node in descendant_nodes:
             parent_node.children.remove(node)
@@ -433,25 +457,3 @@ class View:
             'light': b'iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKpSURBVFhH7ZbPaxNBFMdnZjdZUZoeihakCJLaQympFCGlevTQBmpJD/0DPEoFDxIVFEIPBsUi0rv/QKAlKqmC4EXFRARTe/FXDiKKVoUa0GQ3O+N7yWzdbYgkcSIV9pNDdn5/eW/ee0N8fHx8fHY2VP43EE/e22dX7JnieGRJUBaAmUzIsb8FDhX4o5xb4Xxh3hQ0s5qKbchhDw0Cp05nDaOXJV5HIwuCMdinu6AAEEoGc88vmpvk2upSrFIfqeMReCKR2V88euQd1zRNNLVtd6BgCWbb1aHciwPLlyc/yu7fAmcT2YGXxw6DONYVabjpLo0SXe5eBUFlGz3thdlchB8+Hbh1deYDtmvTp5O3dxfHxkpgOYZtleCGoSAjj4/vrXdsY+L+BvlucsJlGwFL2sMPHvWkr8/9rAnSqtp5wdSLC4Iz1mP9TcUhOIZzAi7Hwd3XrD2hs/hN4xeW+15NjH/hEBAqwfPWp/plqzVGsp+2LMkgcIafrfUxTo04RqtqQoH298Sr4ACpjZiQ5uhI5n3Z1nVD9isBj0G3dYLbippVLTNQGpRtZRgQrZ3iXgueNUCgNxeqAIOjUzzBAtrUXz7FMMjgyquZyTvf0nKtRW0gkJuyrQysEJ3iXgs1usLCucI81kGV4HZYIdoF1zhSqBAEtJ1iTFRWwIqyWx1Yvtpl07UGBQYNLcNWUrNfB/NrC9ihEjxq9O7neqMFcK7beoeeFC6lk5PfalHMNesK+NuujSoELzwm3j+5G8dwjjs44EVjB36UFvF7K+n8q+eWkyMx0lt+bjns6AerAz75g73szJtoJAWlRnWAN4AC4HqJoVzhnK6XbqSTc56019ROYM0equvTb6OjN7Feqy6JmIQhe1QO5gsnqVW9Ay4tySEfHx8fn/8HQn4BR5shhwHpGZ8AAAAASUVORK5CYII='
         }
         return toggle_images
-
-    def run(self, query):
-        ''' Execute query and display output '''
-        self.window['-OUTPUT-'].update('')
-        self.window['-QUERYID-'].update('')
-        self.window['-QUERYDURATION-'].update('')
-
-        if query:
-            # Execute query and return output
-            output, query_details = self.presenter.submit_query(query)
-            if query_details['query_error']:
-                # Display error output
-                self.window['-OUTPUT-'].print(
-                    output,
-                    colors=('red'))
-            else:
-                # Display query output
-                self.window['-OUTPUT-'].print(output)
-                self.window['-QUERYID-'].update(query_details['query_id'])
-                self.window['-QUERYDURATION-'].update(query_details['query_duration'])
-        else:
-            self.show_help(self.run_event)
