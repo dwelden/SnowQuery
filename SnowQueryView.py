@@ -261,27 +261,43 @@ class View:
         ''' Prune and rebuild tree under selected node '''
         tree_data = self.get_tree_data()
         node = tree_data.tree_dict.get(node_key)
-        if node_key:
-            status = 'Refreshing...'
-            self.set_status_bar(status)
-            self.prune(node)
+
+        # Get node level
+        if node.key == '':
+            node_level = 'Root'
         else:
-            status = 'Loading databases...'
+            node_level = node.values[0]
+
+        # Determine scope and get schema object list
+        scope = ""
+        if node_level == "Root":
+            scope = "ACCOUNT"
+        elif node_level in ("Database", "Schema"):
+            scope = f"{node_level} {node.key}"
+        elif node_level != "leaf":
+            scope = f"Schema {node.parent}"
+
+        # Continue if valid scope identified
+        if scope:
+            if node_key:
+                status = 'Refreshing...'
+                self.prune(tree_data, node)
+            else:
+                status = 'Loading databases...'
+                tree_data = sg.TreeData()
+                self.set_tree_data(tree_data)
+
             self.set_status_bar(status)
-            tree_data = sg.TreeData()
 
-        self.set_tree_data(tree_data)
+            # Start thread to build database tree
+            threading.Thread(
+                target=self.presenter.build_tree,
+                args=(tree_data, node_level, scope),
+                daemon=True
+            ).start()
 
-        # Start thread to build database tree
-        threading.Thread(
-            target=self.presenter.build_tree,
-            args=(node,),
-            daemon=True
-        ).start()
-
-    def prune(self, node):
+    def prune(self, tree_data, node):
         ''' Delete all descendant nodes under selected node '''
-        tree_data = self.get_tree_data()
         descendant_nodes = self.get_descendant_nodes(node, [])
         for parent_node, node in descendant_nodes:
             parent_node.children.remove(node)

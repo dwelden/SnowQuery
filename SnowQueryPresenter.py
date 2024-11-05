@@ -5,34 +5,23 @@ class Presenter:
         self.view = view
         self.view.set_presenter(self)
 
-    def build_tree(self, node):
+    def build_tree(self, tree_data, node_level, scope):
         ''' Retrieve database metadata from Snowflake and build tree below node '''
 
-        # Get node level
-        if node.key == '':
-            node_level = 'Root'
-        else:
-            node_level = node.values[0]
+        schema_object_list = self.model.get_schema_object_list(node_level, scope)
 
-        tree_data = self.view.get_tree_data()
-        if node_level == 'Root':
-            scope = 'ACCOUNT'
-            self.model.get_databases(tree_data, scope)
-            self.model.get_schemas(tree_data, scope)
-            for object_type in self.model.object_types:
-                self.model.get_schema_objects(tree_data, object_type, scope)
-        elif node_level == 'Database':
-            scope = f'{node_level} {node.key}'
-            self.model.get_schemas(tree_data, scope)
-            for object_type in self.model.object_types:
-                self.model.get_schema_objects(tree_data, object_type, scope)
-        elif node_level == 'Schema':
-            scope = f'{node_level} {node.key}'
-            for object_type in self.model.object_types:
-                self.model.get_schema_objects(tree_data, object_type, scope)
-        elif node_level in self.model.object_types:
-            scope = f'Schema {node.parent}'
-            self.model.get_schema_objects(tree_data, node_level, scope)
+        for schema_object in schema_object_list:
+            parent = schema_object["parent"]
+            name = schema_object["name"]
+            formatted_name = schema_object["formatted_name"]
+            object_type = schema_object["object_type"]
+            if object_type == "object_header":
+                level = name
+            elif object_type in self.model.object_types:
+                level = "leaf"
+            else:
+                level = object_type
+            tree_data.Insert(parent, formatted_name, name, [level,])
 
         self.view.set_tree_data(tree_data)
         self.view.set_status_bar('Ready')

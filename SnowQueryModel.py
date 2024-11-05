@@ -30,51 +30,90 @@ class Model:
             'Sequences'
         ]
 
-    def get_databases(self, tree_data, scope):
+    def get_schema_object_list(self, node_level, scope):
+        ''' Get list of objects under the specified node '''
+        schema_object_list = []
+        add_object_header = True
+        if node_level == 'Root':
+            schema_object_list += self.get_databases(scope)
+            schema_object_list += self.get_schemas(scope)
+            for object_type in self.object_types:
+                schema_object_list += self.get_schema_objects(object_type, scope, add_object_header)
+        elif node_level == 'Database':
+            schema_object_list += self.get_schemas(scope)
+            for object_type in self.object_types:
+                schema_object_list += self.get_schema_objects(object_type, scope, add_object_header)
+        elif node_level == 'Schema':
+            for object_type in self.object_types:
+                schema_object_list += self.get_schema_objects(object_type, scope, add_object_header)
+        elif node_level in self.object_types:
+            add_object_header = False
+            schema_object_list += self.get_schema_objects(node_level, scope, add_object_header)
+        return schema_object_list
+
+    def get_databases(self, scope):
         ''' Get databases '''
         dbs = self.get_metadata('Databases', scope)
 
-        # Add databases to tree
+        db_list = []
         for db in dbs:
-            db_key = self.format_identifier(db)
-            tree_data.Insert('',db_key,db,['Database',])
+            db_list.append(
+                {
+                    "parent": "",
+                    "name": db,
+                    "formatted_name": self.format_identifier(db),
+                    "object_type": "Database"
+                }
+            )
+        return db_list
 
-    def get_schemas(self, tree_data, scope):
+    def get_schemas(self, scope):
         ''' Get database schemas '''
         schemas = self.get_metadata('Schemas', scope)
 
-        # Add schemas to tree
+        schema_list = []
         for db, schema in schemas:
-            db_key = db
             formatted_db = f'{self.format_identifier(db)}'
             formatted_schema = f'{self.format_identifier(schema)}'
-            schema_key = f'{formatted_db}.{formatted_schema}'
-            tree_data.Insert(db_key,schema_key,schema,['Schema',])
+            schema_list.append(
+                {
+                    "parent": db,
+                    "name": schema,
+                    "formatted_name": f"{formatted_db}.{formatted_schema}",
+                    "object_type": "Schema"
+                }
+            )
+        return schema_list
 
-    def get_schema_objects(self, tree_data, object_type, scope):
+    def get_schema_objects(self, object_type, scope, add_object_header):
         ''' Get schema objects'''
         schema_objects = self.get_metadata(object_type, scope)
 
-        # Add schema objects to tree
+        schema_object_list = []
+        object_headers = []
         for db, schema, name in schema_objects:
             formatted_db = f'{self.format_identifier(db)}'
             formatted_schema = f'{self.format_identifier(schema)}'
             formatted_name = f'{self.format_identifier(name)}'
+            object_header = {
+                "parent": f"{formatted_db}.{formatted_schema}",
+                "name": object_type,
+                "formatted_name": f'{formatted_db}.{formatted_schema}.{object_type}',
+                "object_type": "object_header"
+            }
+            if add_object_header and object_header not in object_headers:
+                schema_object_list.append(object_header)
+                object_headers.append(object_header)
 
-            # Add schema object types to tree
-            for obj_type in self.object_types:
-                # INFORMATION_SCHEMA has only Views
-                if schema == 'INFORMATION_SCHEMA' and obj_type != 'Views':
-                    continue
-                obj_type_key = f'{formatted_db}.{formatted_schema}-{obj_type}'
-                if not tree_data.tree_dict.get(obj_type_key):
-                    # Add schema object type to tree
-                    schema_key = f'{formatted_db}.{formatted_schema}'
-                    tree_data.Insert(schema_key,obj_type_key,obj_type,[obj_type,])
-
-            object_type_key = f'{formatted_db}.{formatted_schema}-{object_type}'
-            schema_object_key = f'{formatted_db}.{formatted_schema}.{formatted_name}'
-            tree_data.Insert(object_type_key,schema_object_key,name,['leaf',])
+            schema_object_list.append(
+                {
+                    "parent": f"{formatted_db}.{formatted_schema}.{object_type}",
+                    "name": name,
+                    "formatted_name": f'{formatted_db}.{formatted_schema}.{formatted_name}',
+                    "object_type": object_type
+                }
+            )
+        return schema_object_list
 
     def format_identifier(self, id):
         ''' Quote format the identifier if needed.
