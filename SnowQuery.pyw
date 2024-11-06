@@ -3,7 +3,7 @@ from SnowQueryView import View
 from SnowQueryPresenter import Presenter
 
 def main():
-    ''' Establish connection to Snowflake and show window '''
+    ''' Initialize model, view, and presenter and show window '''
 
     model = Model()
     view = View()
