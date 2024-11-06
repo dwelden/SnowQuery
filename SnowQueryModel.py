@@ -140,37 +140,32 @@ class Model:
 
     def get_metadata(self, object_type, scope):
         ''' Get requested database metadata from Snowflake '''
-        sql = f'SHOW TERSE {object_type} IN {scope}'
-
+        
         # Set database name column, and filter for functions and procedures
         if object_type in ('Functions', 'Procedures'):
             dbname = 'catalog_name'
             filter = """ WHERE "is_builtin" = 'N'"""
         else:
             dbname = 'database_name'
-            filter = None
+            filter = ''
 
-        # Build results SQL
+        # Build parameters for results SQL
         if object_type == 'Databases':
-            results_sql = 'SELECT "name"'
+            column_list = '"name"'
         elif object_type == 'Schemas':
-            results_sql = 'SELECT "database_name", "name"'
+            column_list = '"database_name", "name"'
         elif object_type in ('Functions', 'Procedures'):
-            results_sql = f'''SELECT "{dbname}", "schema_name", REGEXP_REPLACE("arguments", ' RETURN .*', '') as "name"'''
+            column_list = f'''"{dbname}", "schema_name", REGEXP_REPLACE("arguments", ' RETURN .*', '') as "name"'''
         else:
-            results_sql = f'SELECT "{dbname}", "schema_name", "name"'
-        results_sql += ' FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))'
-        if filter:
-            results_sql += filter
-        results_sql += ' ORDER BY "name"'
+            column_list = f'"{dbname}", "schema_name", "name"'
         
         # Build and execute query
         query = f"""
         declare
             res resultset;
         begin
-            {sql};
-            res := ({results_sql});
+            SHOW TERSE {object_type} IN {scope};
+            res := (SELECT {column_list} FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) {filter} ORDER BY "name");
             return table (res);
         end;
         """
