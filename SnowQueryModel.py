@@ -30,6 +30,14 @@ class Model:
             'Sequences'
         ]
 
+    def __del__(self):
+        ''' Cleanup connection to Snowflake '''
+
+        # Connect to Snowflake and create cursors
+        self.cursor.close()
+        self.dcursor.close()
+        self.cnxn.close()
+
     def get_schema_object_list(self, node_level, scope):
         ''' Get list of objects under the specified node '''
         schema_object_list = []
