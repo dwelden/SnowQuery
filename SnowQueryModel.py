@@ -33,7 +33,6 @@ class Model:
     def __del__(self):
         ''' Cleanup connection to Snowflake '''
 
-        # Connect to Snowflake and create cursors
         self.cursor.close()
         self.dcursor.close()
         self.cnxn.close()
