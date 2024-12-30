@@ -1,0 +1,11 @@
+[project]
+name = "snowquery"
+version = "2.0.0"
+description = "Simple Snowflake query application"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "prettytable>=3.12.0",
+    "snowflake-connector-python>=3.12.4",
+    "sv-ttk>=2.6.0",
+]
