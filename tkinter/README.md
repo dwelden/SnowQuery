@@ -7,6 +7,7 @@ Simple Snowflake query application created with: <br>
 &nbsp;&nbsp;&nbsp;☯&nbsp;Sun Valley ttk Theme https://github.com/rdbende/Sun-Valley-ttk-theme <br>
 <br>
 
-![image](https://github.com/dwelden/SnowQuery/assets/11447810/bd893d46-d5a5-40d1-91c6-a457d1874210)
+![Screenshot from 2024-12-30 13-40-56](https://github.com/user-attachments/assets/2982f333-e9d6-430c-ab79-867d0d147b1a)
 
-![image](https://github.com/dwelden/SnowQuery/assets/11447810/62401545-0651-4a27-8af0-fd5114a3a9a8)
+![image](https://github.com/user-attachments/assets/19b4c92f-5cdf-4475-b2d3-182454b0ef4d)
+
