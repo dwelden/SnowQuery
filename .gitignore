@@ -2,3 +2,6 @@
 .venv/
 app.zip
 __pycache__
+dummy*.*
+*.csv
+.python-version
