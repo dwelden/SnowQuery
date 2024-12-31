@@ -246,7 +246,7 @@ class View:
                 ('Copy', self.copy_query_id),
             )
         )
-        query_duration_tooltip = Tooltip(
+        query_id_tooltip = Tooltip(
             widget=self.query_id,
             text="Query ID (right-click to copy)"
         )
