@@ -1,7 +1,7 @@
 from string import ascii_uppercase, digits
 
 import prettytable as pt
-# from SnowflakeConnectionPK import get_connection_parameters
+from SnowflakeConnectionPK import get_connection_parameters
 import snowflake.connector
 from snowflake.connector import DictCursor
 
@@ -10,11 +10,11 @@ class Model:
         ''' Establish connection to Snowflake '''
 
         # Load Snowflake connection parameters
-        # connection_parameters = get_connection_parameters()
+        connection_parameters = get_connection_parameters()
 
         # Connect to Snowflake and create cursors
-        # self.cnxn = snowflake.connector.connect(**connection_parameters)
-        self.cnxn = snowflake.connector.connect()
+        self.cnxn = snowflake.connector.connect(**connection_parameters)
+        # self.cnxn = snowflake.connector.connect()
         self.cursor = self.cnxn.cursor()
         self.dcursor = self.cnxn.cursor(DictCursor)
         self.object_types = [
