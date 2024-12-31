@@ -1,2 +1,2 @@
 # SnowQuery
-Simple Snowflake query application created
+Simple Snowflake query application
