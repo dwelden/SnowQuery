@@ -1,6 +1,5 @@
 from base64 import b64decode
 from pathlib import Path
-import threading
 import tkinter as tk
 from tkinter import messagebox, filedialog
 from tkinter import ttk, StringVar
@@ -115,16 +114,15 @@ class View:
         left_header = ttk.Frame(master=left_column)
         tree_label = ttk.Label(master=left_header, text="Databases")
         tree_label.pack(side='left', padx=5)
-        refresh_button = tk.Button(
+        self.refresh_button = tk.Button(
             master=left_header,
             fg=self.snow_fg,
             text="⟳",
-            width=1,
-            command=self.refresh_tree
+            width=1
         )
-        refresh_button.pack(side='right')
+        self.refresh_button.pack(side='right')
         refresh_button_tooltip = Tooltip(
-            widget=refresh_button,
+            widget=self.refresh_button,
             text="Refresh"
         )
         left_header.pack(fill='both')
@@ -274,10 +272,12 @@ class View:
 
     def show(self):
         ''' Show window and begin main loop '''
-        self.refresh_tree()
-        self.new_file()
+        self.refresh_button.configure(command=self.presenter.refresh_tree
+        )
         self.run_button.configure(command=self.presenter.submit_query)
         self.window.bind('<F5>', self.presenter.submit_query)
+        self.presenter.refresh_tree()
+        self.new_file()
         self.window.mainloop()
 
     def position_window(self):
@@ -333,45 +333,8 @@ class View:
     def refresh_tree_node(self):
         ''' Refresh tree under the selected node '''
         node = self.tree.selection()[0]
-        self.refresh_tree(node=node)
+        self.presenter.refresh_tree(node=node)
 
-    def refresh_tree(self, node=''):
-        ''' Prune and rebuild tree '''
-        # Get node level
-        if not node:
-            node_level = "Root"
-        else:
-            node_level = self.tree.item(node)['values'][0]
-            node_parent = self.tree.parent(node)
-        
-        # Determine scope and get schema object list
-        scope = ""
-        if node_level == "Root":
-            scope = "ACCOUNT"
-        elif node_level in ("Database", "Schema"):
-            scope = f"{node_level} {node}"
-        elif node_level != "leaf":
-            scope = f"Schema {node_parent}"
-
-        # Continue if valid scope identified
-        if scope:
-            if node:
-                status = "Refreshing..."
-                # self.tree.set_children(node)
-                self.tree.delete(*self.tree.get_children(node))
-            else:
-                status = "Loading databases..."
-                self.tree.delete(*self.tree.get_children())
-
-            self.set_status_bar(status)
-
-            # Start thread to build database tree
-            threading.Thread(
-                target=self.presenter.build_tree,
-                args=(node_level, scope),
-                daemon=True
-            ).start()
-    
     def tree_selection_copy(self):
         ''' Copy tree selection '''
         value = self.tree.selection()

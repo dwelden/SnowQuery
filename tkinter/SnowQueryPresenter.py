@@ -1,3 +1,5 @@
+import threading
+
 class Presenter:
     def __init__(self, model, view):
         ''' Connect presenter to model and view '''
@@ -5,6 +7,44 @@ class Presenter:
         self.view = view
         self.view.set_presenter(self)
 
+    def refresh_tree(self, node=''):
+        ''' Prune and rebuild tree '''
+        tree = self.view.tree
+        
+        # Get node level
+        if not node:
+            node_level = "Root"
+        else:
+            node_level = tree.item(node)['values'][0]
+            node_parent = tree.parent(node)
+        
+        # Determine scope and get schema object list
+        scope = ""
+        if node_level == "Root":
+            scope = "ACCOUNT"
+        elif node_level in ("Database", "Schema"):
+            scope = f"{node_level} {node}"
+        elif node_level != "leaf":
+            scope = f"Schema {node_parent}"
+
+        # Continue if valid scope identified
+        if scope:
+            if node:
+                status = "Refreshing..."
+                tree.delete(*tree.get_children(node))
+            else:
+                status = "Loading databases..."
+                tree.delete(*tree.get_children())
+
+            self.view.set_status_bar(status)
+
+            # Start thread to build database tree
+            threading.Thread(
+                target=self.build_tree,
+                args=(node_level, scope),
+                daemon=True
+            ).start()
+    
     def build_tree(self, node_level, scope):
         ''' Retrieve database metadata from Snowflake and build tree below node '''
 
