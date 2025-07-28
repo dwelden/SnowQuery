@@ -3,9 +3,9 @@ Simple Snowflake query application created with: <br>
 <br>
 &nbsp;&nbsp;&nbsp;🐍 Qt for Python https://doc.qt.io/qtforpython-6/ <br>
 &nbsp;&nbsp;&nbsp;❄ Snowflake Connector for Python https://www.snowflake.com/ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;❖&nbsp;&nbsp;PrettyTable https://github.com/jazzband/prettytable <br>
+&nbsp;&nbsp;&nbsp;&nbsp;❖&nbsp;&nbsp;PrettyTable https://github.com/jazzband/prettytable<br>
+<br>
 
-<!-- ![Screenshot from 2024-12-30 13-40-56](https://github.com/user-attachments/assets/2982f333-e9d6-430c-ab79-867d0d147b1a)
+<img width="1596" height="1262" alt="SQQTLT" src="https://github.com/user-attachments/assets/cd6a6278-9e95-4067-863d-6fb2402b9eef" />
 
-![image](https://github.com/user-attachments/assets/19b4c92f-5cdf-4475-b2d3-182454b0ef4d) -->
-
+<img width="1595" height="1265" alt="SQQTDK" src="https://github.com/user-attachments/assets/3f7fa3b2-9bc8-4db9-b52f-bac49bc2c88f" />
