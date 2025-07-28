@@ -11,8 +11,17 @@ QMenu, QMenuBar {
 }
 
 QMenu::separator {
-    height: 1px;
+    height: 2px;
     color: black;
+}
+
+QMenu::item {
+    background-color: transparent;
+}
+
+QMenu::item:selected {
+    background-color: #29b5e8;
+    color: white;
 }
 
 /* Label styles */
