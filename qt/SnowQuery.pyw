@@ -1,4 +1,4 @@
-from FakeModel import Model
+from SnowQueryModel import Model
 from SnowQueryView import View
 from SnowQueryPresenter import Presenter
 
