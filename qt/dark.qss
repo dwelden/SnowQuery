@@ -1,0 +1,100 @@
+/* Widget styles */
+QWidget {
+    background-color: black;
+    color: white;
+}
+
+/* Menu styles */
+QMenu, QMenuBar {
+    background-color: black;
+    color: #29b5e8;
+}
+
+QMenu::separator {
+    height: 1px;
+    color: white;
+}
+
+/* Label styles */
+QLabel {
+    background-color: black;
+    color: white;
+    border-style: none;
+}
+
+/* Button styles */
+QPushButton {
+    background-color: black;
+    color: #29b5e8;
+    border-style: outset;
+    border-width: 1px;
+    border-color: gray;
+    padding: 1px;
+}
+
+/* Scroll area styles */
+QAbstractScrollArea {
+    padding: 1px;
+    border: 1px solid gray;
+}
+
+/* ScrollBar styles */
+QScrollBar:vertical {
+    border: 1px solid gray;
+    background: #444444;
+    width: 15px;
+    margin: 22px 0 22px 0;
+}
+
+QScrollBar::handle:vertical {
+    background: black;
+    min-height: 20px;
+    border: 1px solid gray;
+}
+
+QScrollBar::add-line:vertical {
+    border: 1px solid gray;
+    background: black;
+    height: 20px;
+    subcontrol-position: bottom;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:vertical {
+    border: 1px solid gray;
+    background: black;
+    height: 20px;
+    subcontrol-position: top;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+    border: 1px solid gray;
+    width: 3px;
+    height: 3px;
+    background: #29b5e8;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+ 
+/* TreeWidget styles */
+QTreeWidget::item::selected {
+    background-color: black;
+    color: #29b5e8; 
+}
+
+/* Text edit styles */
+QTextEdit {
+    background-color: black;
+    color: #29b5e8;
+}
+
+/* Line edit styles */
+QLineEdit {
+    background-color: black;
+    color: #29b5e8;
+    border: 1px solid gray;
+    padding: 1px;
+}
